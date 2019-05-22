@@ -13,7 +13,8 @@ exports.create = (req, res) => {
     const note = new Note({
         title: req.body.title || "Untitled Note",
         subtitle: req.body.subtitle || "-",
-        content: req.body.content
+        content: req.body.content,
+        pinned: false,
     });
 
     // Save Note in the database
@@ -95,8 +96,37 @@ exports.update = (req, res) => {
             message: "Error updating note with id " + req.params.noteId
         });
     });
-
 };
+
+exports.pin = (req, res) => {
+    if(!req.body.pinned) {
+        return res.status(400).send({
+            message: "body can not be empty"
+        });
+    }
+
+    Note.findByIdAndUpdate(req.params.noteId, {
+        pinned: req.body.pinned
+    }, {new: true})
+    .then(note => {
+        if(!note) {
+            return res.status(404).send({
+                message: "Note not found with id " + req.params.noteId
+            });
+        }
+        res.send(note);
+    })
+    .catch(err => {
+        if(err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: "Note not found with id " + req.params.noteId
+            });                
+        }
+        return res.status(500).send({
+            message: "Error updating note with id " + req.params.noteId
+        });
+    })
+}
 
 // Delete a note with the specified noteId in the request
 exports.delete = (req, res) => {
